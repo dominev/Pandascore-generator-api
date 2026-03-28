@@ -28,6 +28,7 @@ pandascore_generator/
 │   ├── yesterday.html
 │   ├── today.html
 │   ├── tomorrow.html
+├── screenshots/         # Тест скрины   
 └── requirements.txt     # Зависимости
 ```
 
