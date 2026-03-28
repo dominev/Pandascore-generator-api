@@ -20,7 +20,7 @@
 ## Архитектура
 ```bash
 pandascore_generator/
-├── .env                 #PANDASCORE_API_KEY
+├── .env                 # PANDASCORE_API_KEY
 ├── generate.py          # Главный скрипт
 ├── templates/
 │   └── page.html        # Базовый шаблон HTML
