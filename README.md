@@ -6,6 +6,8 @@
 
 *При каждом запуске программа обновляет страницы актуальными данными.*
 
+<img width="1029" height="946" alt="image" src="https://github.com/user-attachments/assets/e2902c93-a3cb-4d16-8171-b5785489afda" />
+
 ## Итоговый вывод
 
 - **3 HTML-страницы**:  
@@ -20,7 +22,7 @@
 ## Архитектура
 ```bash
 pandascore_generator/
-├── .env                 #PANDASCORE_API_KEY
+├── .env                 # PANDASCORE_API_KEY
 ├── generate.py          # Главный скрипт
 ├── templates/
 │   └── page.html        # Базовый шаблон HTML
@@ -28,6 +30,7 @@ pandascore_generator/
 │   ├── yesterday.html
 │   ├── today.html
 │   ├── tomorrow.html
+├── screenshots/         # Тест скрины   
 └── requirements.txt     # Зависимости
 ```
 
