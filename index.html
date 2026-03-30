@@ -200,7 +200,7 @@
               "@context": "https://schema.org",
               "@type": "Organization",
               "name": "CyberSports matches",
-              "url": "https://dominev.github.io/pandascore-generator-api",
+              "url": "github.com/dominev/Pandascore-generator-api",
               "description": "Киберспортивные матчи с коэффициентами"
             }
             </script>
@@ -208,143 +208,103 @@
     </div>
 
     <script>
-        const API_KEY = 'sxPfDVWqi9P7Ns64b6jE17_9pKySGI6K9R81nBpwZ6C0hUcuaY0'; // Мой API
+        const API_KEY = 'sxPfDVWqi9P7Ns64b6jE17_9pKySGI6K9R81nBpwZ6C0hUcuaY0';
         const BASE_URL = 'https://api.pandascore.co';
-        // CORS-прокси для обхода ограничений браузера
         const CORS_PROXY = 'https://cors-anywhere.herokuapp.com/';
 
         let currentDay = 'today';
-        let currentDate = new Date();
 
-        // Формат даты для API
         function formatDate(date) {
             return date.toISOString().split('T')[0];
         }
 
-        // Получение даты для выбранного дня
         function getDateForDay(day) {
             const now = new Date();
             const targetDate = new Date(now);
-            if (day === 'yesterday') {
-                targetDate.setDate(now.getDate() - 1);
-            } else if (day === 'tomorrow') {
-                targetDate.setDate(now.getDate() + 1);
-            }
+            if (day === 'yesterday') targetDate.setDate(now.getDate() - 1);
+            if (day === 'tomorrow') targetDate.setDate(now.getDate() + 1);
             return targetDate;
         }
 
         function formatDateDisplay(date) {
-            const options = { year: 'numeric', month: 'long', day: 'numeric' };
-            return date.toLocaleDateString('ru-RU', options);
+            return date.toLocaleDateString('ru-RU', { year: 'numeric', month: 'long', day: 'numeric' });
         }
 
-        // Парсинг названий команд из ответа API
         function extractTeamNames(match) {
-            let team1 = 'TBD';
-            let team2 = 'TBD';
-
+            let team1 = 'TBD', team2 = 'TBD';
             if (match.opponents && Array.isArray(match.opponents)) {
                 if (match.opponents[0]) {
-                    // opponents[].opponent.name
-                    if (match.opponents[0].opponent && match.opponents[0].opponent.name) {
-                        team1 = match.opponents[0].opponent.name;
-                    }
-                    // opponents[].name
-                    else if (match.opponents[0].name) {
-                        team1 = match.opponents[0].name;
-                    }
+                    if (match.opponents[0].opponent?.name) team1 = match.opponents[0].opponent.name;
+                    else if (match.opponents[0].name) team1 = match.opponents[0].name;
                 }
                 if (match.opponents[1]) {
-                    if (match.opponents[1].opponent && match.opponents[1].opponent.name) {
-                        team2 = match.opponents[1].opponent.name;
-                    } else if (match.opponents[1].name) {
-                        team2 = match.opponents[1].name;
-                    }
+                    if (match.opponents[1].opponent?.name) team2 = match.opponents[1].opponent.name;
+                    else if (match.opponents[1].name) team2 = match.opponents[1].name;
                 }
             }
-
-            // Если есть поле name у самого матча
-            if (match.name && match.name !== 'TBD vs TBD' && team1 === 'TBD' && team2 === 'TBD') {
+            if (match.name && team1 === 'TBD' && team2 === 'TBD') {
                 const parts = match.name.split(' vs ');
-                if (parts.length === 2) {
-                    team1 = parts[0];
-                    team2 = parts[1];
-                }
+                if (parts.length === 2) { team1 = parts[0]; team2 = parts[1]; }
             }
-
             return `${team1} vs ${team2}`;
         }
 
-        // Парсинг коэффициентов
         function extractOdds(match) {
-            let odds = null;
-
-            if (match.odds && match.odds.original) {
-                odds = match.odds.original;
-            } else if (match.odds && match.odds.sites && match.odds.sites.length > 0) {
-                odds = match.odds.sites[0];
-            }
-            return odds;
+            if (match.odds?.original) return match.odds.original;
+            if (match.odds?.sites?.[0]?.odds) return match.odds.sites[0].odds;
+            return null;
         }
 
-        // Статус матча
         function getStatusInfo(status) {
-            const statusMap = {
+            const map = {
                 'not_started': { text: '⏳ Ожидается', class: 'not_started' },
                 'running': { text: '🔴 LIVE', class: 'running' },
                 'finished': { text: '✅ Завершён', class: 'finished' }
             };
-            return statusMap[status] || { text: status || 'Неизвестно', class: 'not_started' };
+            return map[status] || { text: status || 'Неизвестно', class: 'not_started' };
         }
 
-        // Формат времени
         function formatTime(timeStr) {
-            if (!timeStr) return 'Время не указано';
+            if (!timeStr) return '—';
             try {
-                const date = new Date(timeStr);
-                return date.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
-            } catch {
-                return timeStr;
-            }
+                return new Date(timeStr).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+            } catch { return timeStr; }
         }
 
-        // Загрузка матчей с API через CORS-прокси (исправленная версия)
         async function fetchMatches(date) {
-        // Формируем параметры запроса в виде строки без кодирования всего URL
             const params = new URLSearchParams({
                 'filter[begin_at]': date,
                 'sort': 'begin_at',
                 'per_page': '50'
             });
             const targetUrl = `${BASE_URL}/matches?${params.toString()}`;
-            const proxyUrl = `${CORS_PROXY}${targetUrl}`;  // не кодируем весь URL
+            const proxyUrl = `${CORS_PROXY}${targetUrl}`;
 
             try {
                 const response = await fetch(proxyUrl, {
-                    headers: {
-                        'Authorization': `Bearer ${API_KEY}`
-                    }
+                    headers: { 'Authorization': `Bearer ${API_KEY}` }
                 });
                 if (!response.ok) {
+                    if (response.status === 403) {
+                        throw new Error('403_ACTIVATE');
+                    }
                     throw new Error(`HTTP ${response.status}: ${response.statusText}`);
                 }
                 return await response.json();
             } catch (error) {
-                console.error('Ошибка загрузки матчей:', error);
+                console.error('Ошибка загрузки:', error);
                 throw error;
             }
         }
 
-        // Отрисовка матчей
         function renderMatches(matches) {
             const container = document.getElementById('matches-container');
-
-            if (!matches || matches.length === 0) {
+            if (!matches?.length) {
                 container.innerHTML = '<div class="no-matches">📭 На этот день матчей не найдено</div>';
                 return;
             }
 
-            const matchesHtml = matches.map(match => {
+            const html = matches.map(match => {
                 const teams = extractTeamNames(match);
                 const odds = extractOdds(match);
                 const statusInfo = getStatusInfo(match.status);
@@ -353,30 +313,17 @@
 
                 let oddsHtml = '';
                 if (odds) {
-                    if (typeof odds === 'object') {
-                        const oddsValues = Object.values(odds).slice(0, 2);
-                        oddsHtml = `<span class="odds">💰 ${oddsValues.join(' / ')}</span>`;
-                    } else {
-                        oddsHtml = `<span class="odds">💰 ${odds}</span>`;
-                    }
+                    const vals = typeof odds === 'object' ? Object.values(odds).slice(0, 2) : [odds];
+                    oddsHtml = `<span class="odds">💰 ${vals.join(' / ')}</span>`;
                 }
 
-                // Счет
                 let scoreHtml = '';
-                if (match.status === 'finished' && match.results && match.results.length > 0) {
-                    const result = match.results[0];
-                    if (result.scores && result.scores.length >= 2) {
-                        scoreHtml = `<div class="score">Счёт: ${result.scores[0]} - ${result.scores[1]}</div>`;
-                    } else if (result.score) {
-                        scoreHtml = `<div class="score">Счёт: ${result.score}</div>`;
-                    }
-                } else if (match.status === 'running') {
-                    // Для LIVE матчей показывает текущий счёт если есть
-                    if (match.results && match.results.length > 0) {
-                        const result = match.results[0];
-                        if (result.scores && result.scores.length >= 2) {
-                            scoreHtml = `<div class="score">⚡ LIVE: ${result.scores[0]} - ${result.scores[1]}</div>`;
-                        }
+                if (match.results?.[0]) {
+                    const r = match.results[0];
+                    if (r.scores?.length >= 2) {
+                        scoreHtml = `<div class="score">${match.status === 'running' ? '⚡ LIVE: ' : 'Счёт: '}${r.scores[0]} - ${r.scores[1]}</div>`;
+                    } else if (r.score) {
+                        scoreHtml = `<div class="score">Счёт: ${r.score}</div>`;
                     }
                 }
 
@@ -396,83 +343,57 @@
                 `;
             }).join('');
 
-            container.innerHTML = `<div class="matches-grid">${matchesHtml}</div>`;
+            container.innerHTML = `<div class="matches-grid">${html}</div>`;
         }
 
-        // Мейн функция загрузки данных
         async function loadMatches(day) {
             const container = document.getElementById('matches-container');
             container.innerHTML = '<div class="loading">🔄 Загрузка актуальных матчей...</div>';
 
             const targetDate = getDateForDay(day);
-            const dateStr = formatDate(targetDate);
-            const dateDisplay = formatDateDisplay(targetDate);
-
-            document.getElementById('date-header').textContent = dateDisplay;
+            document.getElementById('date-header').textContent = formatDateDisplay(targetDate);
 
             try {
-                const matches = await fetchMatches(dateStr);
+                const matches = await fetchMatches(formatDate(targetDate));
                 renderMatches(matches);
-
-                // Обновляем время последнего обновления
-                const now = new Date();
-                document.getElementById('last-updated').textContent =
-                    `Последнее обновление: ${now.toLocaleTimeString('ru-RU')}`;
+                document.getElementById('last-updated').textContent = `Обновлено: ${new Date().toLocaleTimeString('ru-RU')}`;
             } catch (error) {
                 let errorMsg = error.message;
-                if (errorMsg.includes('401')) {
-                    errorMsg = 'Неверный API-ключ. Пожалуйста, проверьте ключ.';
-                } else if (errorMsg.includes('429')) {
-                    errorMsg = 'Слишком много запросов. Попробуйте позже.';
-                } else if (errorMsg.includes('Failed to fetch')) {
-                    errorMsg = 'Проблема с соединением. Проверьте интернет.';
+                if (errorMsg === '403_ACTIVATE') {
+                    errorMsg = 'Для работы сайта необходимо один раз активировать прокси-сервер. ' +
+                               'Пожалуйста, перейдите по ссылке: ' +
+                               '<a href="https://cors-anywhere.herokuapp.com/" target="_blank">https://cors-anywhere.herokuapp.com/</a> ' +
+                               'и нажмите кнопку "Request temporary access". После этого обновите страницу.';
+                    container.innerHTML = `<div class="error">⚠️ ${errorMsg}</div>`;
+                } else {
+                    container.innerHTML = `<div class="error">⚠️ Ошибка загрузки данных: ${errorMsg}<br>Пожалуйста, проверьте API-ключ или попробуйте позже.</div>`;
                 }
-                container.innerHTML = `
-                    <div class="error">
-                        ⚠️ Ошибка загрузки данных: ${errorMsg}<br>
-                        Пожалуйста, проверьте API-ключ или попробуйте позже.
-                    </div>
-                `;
             }
         }
 
-        // Переключатель дней
         function setupNavigation() {
-            const buttons = document.querySelectorAll('.day-btn');
-            buttons.forEach(btn => {
-                btn.addEventListener('click', async (e) => {
+            document.querySelectorAll('.day-btn').forEach(btn => {
+                btn.addEventListener('click', async () => {
                     const day = btn.dataset.day;
                     if (day === currentDay) return;
-
-                    // Актив кнопка
-                    buttons.forEach(b => b.classList.remove('active'));
+                    document.querySelectorAll('.day-btn').forEach(b => b.classList.remove('active'));
                     btn.classList.add('active');
-
                     currentDay = day;
                     await loadMatches(currentDay);
                 });
             });
         }
 
-        async function init() {
-            setupNavigation();
-            await loadMatches('today');
-        }
-
-        // Автообновление каждые 30 сек
-        let autoRefreshInterval;
+        let refreshInterval;
         function startAutoRefresh() {
-            if (autoRefreshInterval) clearInterval(autoRefreshInterval);
-            autoRefreshInterval = setInterval(() => {
-                if (!document.querySelector('.loading')) {
-                    loadMatches(currentDay);
-                }
-            }, 30000); // Время обновы
+            if (refreshInterval) clearInterval(refreshInterval);
+            refreshInterval = setInterval(() => {
+                if (!document.querySelector('.loading')) loadMatches(currentDay);
+            }, 30000);
         }
 
-        init().then(() => {
-            startAutoRefresh();
-        });
+        setupNavigation();
+        loadMatches('today').then(() => startAutoRefresh());
     </script>
 </body>
 </html>
