@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Киберспортивные матчи | Live обновление</title>
+    <meta name="description" content="Киберспортивные матчи Live">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
+            background: #f4f7fc;
+            color: #1a2a3a;
+            line-height: 1.5;
+            padding: 2rem;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        h1 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+        .nav {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin: 1.5rem 0;
+            flex-wrap: wrap;
+        }
+        .nav button {
+            background: #2c6e9e;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            font-size: 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .nav button.active {
+            background: #1e4a6e;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+        .nav button:hover {
+            background: #1e4a6e;
+        }
+        .date-header {
+            text-align: center;
+            font-size: 1.2rem;
+            color: #2c6e9e;
+            margin-bottom: 1.5rem;
+            font-weight: bold;
+        }
+        .matches-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 1.5rem;
+        }
+        .match-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.25rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            border-left: 4px solid #2c6e9e;
+            transition: transform 0.2s;
+        }
+        .match-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+        }
+        .teams {
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin-bottom: 0.75rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+        .match-name {
+            flex: 1;
+        }
+        .odds {
+            font-size: 0.9rem;
+            background: #f0f2f5;
+            padding: 0.25rem 0.5rem;
+            border-radius: 6px;
+            font-weight: normal;
+        }
+        .meta {
+            font-size: 0.85rem;
+            color: #4b6f8c;
+            margin: 0.5rem 0;
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+        .status {
+            display: inline-block;
+            padding: 0.2rem 0.6rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        .status.not_started {
+            background: #e9ecef;
+            color: #495057;
+        }
+        .status.running {
+            background: #fff3cd;
+            color: #856404;
+        }
+        .status.finished {
+            background: #d1e7dd;
+            color: #0f5132;
+        }
+        .score {
+            font-weight: bold;
+            margin-top: 0.5rem;
+            font-size: 1rem;
+            color: #1a2a3a;
+        }
+        .league {
+            font-size: 0.8rem;
+            color: #6c8b9e;
+        }
+        .loading {
+            text-align: center;
+            padding: 3rem;
+            color: #2c6e9e;
+        }
+        .no-matches {
+            text-align: center;
+            padding: 3rem;
+            background: #eef2f5;
+            border-radius: 12px;
+            color: #3a6b8c;
+        }
+        .error {
+            text-align: center;
+            padding: 2rem;
+            background: #f8d7da;
+            color: #721c24;
+            border-radius: 8px;
+        }
+        footer {
+            margin-top: 3rem;
+            text-align: center;
+            font-size: 0.8rem;
+            color: #6c8b9e;
+            border-top: 1px solid #cbdbe0;
+            padding-top: 1.5rem;
+        }
+        .last-updated {
+            font-size: 0.7rem;
+            margin-top: 0.5rem;
+        }
+        @media (max-width: 768px) {
+            body {
+                padding: 1rem;
+            }
+            .matches-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Киберспортивные матчи</h1>
+            <div class="nav">
+                <button data-day="yesterday" class="day-btn">📆 Вчера</button>
+                <button data-day="today" class="day-btn active">⚡ Сегодня</button>
+                <button data-day="tomorrow" class="day-btn">🔮 Завтра</button>
+            </div>
+            <div id="date-header" class="date-header">—</div>
+        </header>
+
+        <main id="matches-container">
+            <div class="loading">Загрузка матчей...</div>
+        </main>
+
+        <footer>
+            <p>Данные предоставлены <a href="https://www.pandascore.co/" target="_blank">pandascore</a></p>
+            <div id="last-updated" class="last-updated"></div>
+            <script type="application/ld+json">
+            {
+              "@context": "https://schema.org",
+              "@type": "Organization",
+              "name": "CyberSports matches",
+              "url": "https://dominev.github.io/pandascore-generator-api",
+              "description": "Киберспортивные матчи с коэффициентами"
+            }
+            </script>
+        </footer>
+    </div>
+
+    <script>
+        const API_KEY = 'sxPfDVWqi9P7Ns64b6jE17_9pKySGI6K9R81nBpwZ6C0hUcuaY0'; // Мой API
+        const BASE_URL = 'https://api.pandascore.co';
+        // CORS-прокси для обхода ограничений браузера
+        const CORS_PROXY = 'https://cors-anywhere.herokuapp.com/';
+
+        let currentDay = 'today';
+        let currentDate = new Date();
+
+        // Формат даты для API
+        function formatDate(date) {
+            return date.toISOString().split('T')[0];
+        }
+
+        // Получение даты для выбранного дня
+        function getDateForDay(day) {
+            const now = new Date();
+            const targetDate = new Date(now);
+            if (day === 'yesterday') {
+                targetDate.setDate(now.getDate() - 1);
+            } else if (day === 'tomorrow') {
+                targetDate.setDate(now.getDate() + 1);
+            }
+            return targetDate;
+        }
+
+        function formatDateDisplay(date) {
+            const options = { year: 'numeric', month: 'long', day: 'numeric' };
+            return date.toLocaleDateString('ru-RU', options);
+        }
+
+        // Парсинг названий команд из ответа API
+        function extractTeamNames(match) {
+            let team1 = 'TBD';
+            let team2 = 'TBD';
+
+            if (match.opponents && Array.isArray(match.opponents)) {
+                if (match.opponents[0]) {
+                    // opponents[].opponent.name
+                    if (match.opponents[0].opponent && match.opponents[0].opponent.name) {
+                        team1 = match.opponents[0].opponent.name;
+                    }
+                    // opponents[].name
+                    else if (match.opponents[0].name) {
+                        team1 = match.opponents[0].name;
+                    }
+                }
+                if (match.opponents[1]) {
+                    if (match.opponents[1].opponent && match.opponents[1].opponent.name) {
+                        team2 = match.opponents[1].opponent.name;
+                    } else if (match.opponents[1].name) {
+                        team2 = match.opponents[1].name;
+                    }
+                }
+            }
+
+            // Если есть поле name у самого матча
+            if (match.name && match.name !== 'TBD vs TBD' && team1 === 'TBD' && team2 === 'TBD') {
+                const parts = match.name.split(' vs ');
+                if (parts.length === 2) {
+                    team1 = parts[0];
+                    team2 = parts[1];
+                }
+            }
+
+            return `${team1} vs ${team2}`;
+        }
+
+        // Парсинг коэффициентов
+        function extractOdds(match) {
+            let odds = null;
+
+            if (match.odds && match.odds.original) {
+                odds = match.odds.original;
+            } else if (match.odds && match.odds.sites && match.odds.sites.length > 0) {
+                odds = match.odds.sites[0];
+            }
+            return odds;
+        }
+
+        // Статус матча
+        function getStatusInfo(status) {
+            const statusMap = {
+                'not_started': { text: '⏳ Ожидается', class: 'not_started' },
+                'running': { text: '🔴 LIVE', class: 'running' },
+                'finished': { text: '✅ Завершён', class: 'finished' }
+            };
+            return statusMap[status] || { text: status || 'Неизвестно', class: 'not_started' };
+        }
+
+        // Формат времени
+        function formatTime(timeStr) {
+            if (!timeStr) return 'Время не указано';
+            try {
+                const date = new Date(timeStr);
+                return date.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+            } catch {
+                return timeStr;
+            }
+        }
+
+        // Загрузка матчей с API через CORS-прокси (исправленная версия)
+        async function fetchMatches(date) {
+        // Формируем параметры запроса в виде строки без кодирования всего URL
+            const params = new URLSearchParams({
+                'filter[begin_at]': date,
+                'sort': 'begin_at',
+                'per_page': '50'
+            });
+            const targetUrl = `${BASE_URL}/matches?${params.toString()}`;
+            const proxyUrl = `${CORS_PROXY}${targetUrl}`;  // не кодируем весь URL
+
+            try {
+                const response = await fetch(proxyUrl, {
+                    headers: {
+                        'Authorization': `Bearer ${API_KEY}`
+                    }
+                });
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                return await response.json();
+            } catch (error) {
+                console.error('Ошибка загрузки матчей:', error);
+                throw error;
+            }
+        }
+
+        // Отрисовка матчей
+        function renderMatches(matches) {
+            const container = document.getElementById('matches-container');
+
+            if (!matches || matches.length === 0) {
+                container.innerHTML = '<div class="no-matches">📭 На этот день матчей не найдено</div>';
+                return;
+            }
+
+            const matchesHtml = matches.map(match => {
+                const teams = extractTeamNames(match);
+                const odds = extractOdds(match);
+                const statusInfo = getStatusInfo(match.status);
+                const time = formatTime(match.begin_at);
+                const league = match.league?.name || match.serie?.name || 'Неизвестная лига';
+
+                let oddsHtml = '';
+                if (odds) {
+                    if (typeof odds === 'object') {
+                        const oddsValues = Object.values(odds).slice(0, 2);
+                        oddsHtml = `<span class="odds">💰 ${oddsValues.join(' / ')}</span>`;
+                    } else {
+                        oddsHtml = `<span class="odds">💰 ${odds}</span>`;
+                    }
+                }
+
+                // Счет
+                let scoreHtml = '';
+                if (match.status === 'finished' && match.results && match.results.length > 0) {
+                    const result = match.results[0];
+                    if (result.scores && result.scores.length >= 2) {
+                        scoreHtml = `<div class="score">Счёт: ${result.scores[0]} - ${result.scores[1]}</div>`;
+                    } else if (result.score) {
+                        scoreHtml = `<div class="score">Счёт: ${result.score}</div>`;
+                    }
+                } else if (match.status === 'running') {
+                    // Для LIVE матчей показывает текущий счёт если есть
+                    if (match.results && match.results.length > 0) {
+                        const result = match.results[0];
+                        if (result.scores && result.scores.length >= 2) {
+                            scoreHtml = `<div class="score">⚡ LIVE: ${result.scores[0]} - ${result.scores[1]}</div>`;
+                        }
+                    }
+                }
+
+                return `
+                    <div class="match-card">
+                        <div class="teams">
+                            <span class="match-name">${teams}</span>
+                            ${oddsHtml}
+                        </div>
+                        <div class="meta">
+                            <span class="status ${statusInfo.class}">${statusInfo.text}</span>
+                            <span>🕐 ${time}</span>
+                        </div>
+                        <div class="league">🏆 ${league}</div>
+                        ${scoreHtml}
+                    </div>
+                `;
+            }).join('');
+
+            container.innerHTML = `<div class="matches-grid">${matchesHtml}</div>`;
+        }
+
+        // Мейн функция загрузки данных
+        async function loadMatches(day) {
+            const container = document.getElementById('matches-container');
+            container.innerHTML = '<div class="loading">🔄 Загрузка актуальных матчей...</div>';
+
+            const targetDate = getDateForDay(day);
+            const dateStr = formatDate(targetDate);
+            const dateDisplay = formatDateDisplay(targetDate);
+
+            document.getElementById('date-header').textContent = dateDisplay;
+
+            try {
+                const matches = await fetchMatches(dateStr);
+                renderMatches(matches);
+
+                // Обновляем время последнего обновления
+                const now = new Date();
+                document.getElementById('last-updated').textContent =
+                    `Последнее обновление: ${now.toLocaleTimeString('ru-RU')}`;
+            } catch (error) {
+                let errorMsg = error.message;
+                if (errorMsg.includes('401')) {
+                    errorMsg = 'Неверный API-ключ. Пожалуйста, проверьте ключ.';
+                } else if (errorMsg.includes('429')) {
+                    errorMsg = 'Слишком много запросов. Попробуйте позже.';
+                } else if (errorMsg.includes('Failed to fetch')) {
+                    errorMsg = 'Проблема с соединением. Проверьте интернет.';
+                }
+                container.innerHTML = `
+                    <div class="error">
+                        ⚠️ Ошибка загрузки данных: ${errorMsg}<br>
+                        Пожалуйста, проверьте API-ключ или попробуйте позже.
+                    </div>
+                `;
+            }
+        }
+
+        // Переключатель дней
+        function setupNavigation() {
+            const buttons = document.querySelectorAll('.day-btn');
+            buttons.forEach(btn => {
+                btn.addEventListener('click', async (e) => {
+                    const day = btn.dataset.day;
+                    if (day === currentDay) return;
+
+                    // Актив кнопка
+                    buttons.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+
+                    currentDay = day;
+                    await loadMatches(currentDay);
+                });
+            });
+        }
+
+        async function init() {
+            setupNavigation();
+            await loadMatches('today');
+        }
+
+        // Автообновление каждые 30 сек
+        let autoRefreshInterval;
+        function startAutoRefresh() {
+            if (autoRefreshInterval) clearInterval(autoRefreshInterval);
+            autoRefreshInterval = setInterval(() => {
+                if (!document.querySelector('.loading')) {
+                    loadMatches(currentDay);
+                }
+            }, 30000); // Время обновы
+        }
+
+        init().then(() => {
+            startAutoRefresh();
+        });
+    </script>
+</body>
+</html>
